@@ -1,0 +1,49 @@
+# Data — Synthea artefacts are regenerable from data/generate.sh (SHA256 verified).
+# Do not commit: JAR (~200MB), raw Synthea output (~7GB), KNDB-shaped CSVs (~50MB).
+data/synthea/
+
+# Benchmark artifacts
+bench/results/*.raw
+bench/results/*/*.raw
+
+# Upstream dataset sources (fetch via contrib/epistemic/bench/datasets/bootstrap.sh)
+contrib/epistemic/bench/datasets/*/source/
+
+# Paper build artifacts
+paper-pvldb/*.aux
+paper-pvldb/*.blg
+paper-pvldb/*.log
+paper-pvldb/*.out
+paper-pvldb/*.toc
+paper-pvldb/*.fls
+paper-pvldb/*.fdb_latexmk
+paper-pvldb/*.synctex.gz
+paper-pvldb/*.bak
+paper-pvldb/*.docx
+paper-pvldb/main copy.tex
+paper-pvldb/gemini-code-*.txt
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.uv-cache/
+uv.lock
+bench/.venv/
+bench/__pycache__/
+bench/*/__pycache__/
+
+# Postgres
+*.pgdata
+pgdata/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Secrets — never commit
+.env
+*.pem
+*.key

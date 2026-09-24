@@ -1,0 +1,51 @@
+% tableam_audit.tex --- ABBREVIATED PG 18 REL_18_STABLE TableAmRoutine
+% audit. Full 42-row enumeration lives at
+% contrib/epistemic/bench/docs/tableam_audit.md and is what the paper
+% cites for the completeness argument. The in-body table below shows
+% only the load-bearing rows: seven OVERRIDDEN wrappers, three DDL rows
+% that require explicit disclosure, and category counts for the rest.
+%
+% Line numbers reference PG 18 REL_18_STABLE
+% src/include/access/tableam.h. See contrib/epistemic/DECISIONS.md
+% (F9, F18, F20, F21) for the classification methodology and the
+% disable-and-test proofs behind the seven OVERRIDDEN rows.
+
+\begin{table}[t]
+\centering
+\caption{Abbreviated PG 18 \texttt{TableAmRoutine} audit (44 callbacks
+  total): the seven overridden rows and the three DDL-privileged
+  callbacks that require explicit disclosure. The full 44-row
+  enumeration with per-callback \texttt{tableam.h} citations and ``why
+  safe'' justifications is in
+  \texttt{contrib/epistemic/bench/docs/tableam\_audit.md}
+  in the repository. Category counts for the 34 non-cited rows:
+  28 read-only (scan / fetch / estimate);
+  5 delegated-storage (\texttt{index\_delete\_tuples}, \texttt{tuple\_lock},
+    \texttt{finish\_bulk\_insert}, \texttt{relation\_copy\_data},
+    \texttt{relation\_vacuum});
+  1 delegated-decide (\texttt{relation\_needs\_toast\_table}).}
+\label{tab:tableam-audit}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{p{2.6cm}p{1.1cm}p{3.5cm}}
+\toprule
+callback & class & role \\
+\midrule
+\multicolumn{3}{l}{\emph{Seven overridden write-path callbacks}} \\
+\midrule
+\texttt{tuple\_insert}               & F1--F16 & R1--R5, F6 advisory lock, precedence + F8 xmin tiebreak, eviction audit. \\
+\texttt{multi\_insert}               & F18 & Per-slot fan-out to \texttt{epistemic\_tuple\_insert\_impl}; closes COPY CIM\_MULTI bypass. \\
+\texttt{tuple\_update}               & F20 & Refuse any \texttt{UPDATE} whose new (kind, spec, conf) differs from incumbent's. \\
+\texttt{tuple\_delete}               & F20 & Refuse \texttt{DELETE} outright (\texttt{ERRCODE\_FEATURE\_NOT\_SUPPORTED}). \\
+\texttt{tuple\_insert\_speculative}  & F21 & R1--R5, advisory lock, precedence; heap does the speculative write; deferred eviction stashed. \\
+\texttt{tuple\_complete\_speculative}& F21 & Drain pending eviction on succeeded=true; discard on succeeded=false. \\
+\texttt{relation\_toast\_am}         & F1  & Return \texttt{HEAP\_TABLE\_AM\_OID} so TOAST is plain heap; sidesteps \texttt{heapam.c:1352} identity check during TOAST index build. \\
+\midrule
+\multicolumn{3}{l}{\emph{Three DDL-privileged rows requiring disclosure}} \\
+\midrule
+\texttt{relation\_set\_new\_filelocator} & inherited & Allocates a new physical file for TRUNCATE/CLUSTER/REINDEX. Storage is empty on return; any rewrite repopulates via \texttt{tuple\_insert} or \texttt{multi\_insert}. \\
+\texttt{relation\_nontransactional\_truncate} & inherited & Zeroes the file (\texttt{TRUNCATE}). Removes epistemic incumbents without eviction audit. DDL-privileged; classified with \texttt{SET ACCESS METHOD heap} (Section~\ref{sec:limitations}). \\
+\texttt{relation\_copy\_for\_cluster} & inherited & \texttt{CLUSTER}/\texttt{VACUUM FULL} re-inserts via heap's \texttt{raw\_heap\_insert}, not \texttt{table\_tuple\_insert}, so epistemic checks do not re-fire. Cannot introduce a forgery, only reorder existing rows; disclosed in Section~\ref{sec:limitations}. \\
+\bottomrule
+\end{tabular}
+\end{table}
